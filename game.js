@@ -60,15 +60,19 @@
   });
 
   rematchBtn.addEventListener('click', () => {
-    rematchScreen.style.display = 'none';
-    paused = false;
-    if(p1Wins >= 2 || p2Wins >= 2){
-      resetGame(true);
-    } else {
-      resetRound(true);
-      gameStarted = true;
-    }
-  });
+  rematchScreen.style.display = 'none';
+
+  if (p1Wins >= 2 || p2Wins >= 2) {
+    resetGame(true);  // start fresh match
+  } else {
+    resetRound(true); // continue to next round
+  }
+
+  gameStarted = true; // always mark game as active
+  paused = false;     // unpause
+  updatePauseMenu();  // make sure pause overlay is hidden
+});
+
 
   // NEW: Menu button opens the start screen (so players can edit names / restart)
   if(menuBtn) {
@@ -122,8 +126,8 @@
 
   // -------------------- Attacks --------------------
   const ATTACKS = {
-    leftJab:{ damage:6, range:45, width:15, height:10, windup:150, active:120, recover:180, knockback:3.5, stamCost:6 },
-    rightJab:{ damage:7, range:45, width:15 , height:10, windup:150, active:120, recover:180, knockback:3, stamCost:7 }
+    leftJab:{ damage:2093, range:45, width:15, height:10, windup:150, active:120, recover:180, knockback:3.5, stamCost:6 },
+    rightJab:{ damage:24732, range:45, width:15 , height:10, windup:150, active:120, recover:180, knockback:3, stamCost:7 }
   };
   const COVER = { reduce:0.4, stamPerHit:12, stamPerTick:8/60, pushback:8 };
   const STAM = { max:100, regen:12/60, cooldown:700 };
@@ -255,52 +259,41 @@
   }
 
   function endRound(winnerIdentifier) {
-  // winnerIdentifier might already be a name, or might be "P1"/"P2"/"Player 1"/"Player 2".
-  // Normalize into the actual player names used in the HUD.
+  // normalize winner name
   let winnerName = (winnerIdentifier || '').toString();
-
   if (!winnerName) {
-    // Fallback: try to pick whoever currently has more wins (defensive)
     winnerName = (p1Wins > p2Wins) ? player1Name : (p2Wins > p1Wins) ? player2Name : player1Name;
   } else {
-    // common id -> actual name mapping
     const id = winnerName.toLowerCase();
     if (id === 'p1' || id === 'player 1' || id === '1') winnerName = player1Name || 'P1';
     else if (id === 'p2' || id === 'player 2' || id === '2') winnerName = player2Name || 'P2';
-    // else assume winnerName is already the character name
   }
 
-  // show KO and freeze round logic immediately
+  // KO display
   countdown = "K.O!";
   countdownActive = true;
-  roundActive = false; // ensure round isn't considered active
+  roundActive = false;
 
   setTimeout(() => {
     countdownActive = false;
 
-    // compute wins required to win the match (e.g. best of 3 -> 2)
     const winsNeeded = Math.ceil(maxRounds / 2);
 
     if (p1Wins >= winsNeeded || p2Wins >= winsNeeded) {
-      // match over
-      rematchMessage.textContent = `${winnerName} Wins the Match!`;
-
-      // Save result (non-blocking). We don't await it here so UI stays responsive.
-      saveMatchResult(winnerName).catch(err => console.error('Save match promise error:', err));
-
-      // show rematch screen and refresh leaderboard snapshot
-      centerScreen(rematchScreen);
-      getLeaderboard(); // optionally async
+      // Match over
+      saveMatchResult(winnerName);   // ✅ save to Sheets
+      getLeaderboard();              // refresh leaderboard
+      showRematchScreen(winnerName); // ✅ show rematch screen
       paused = true;
-      gameStarted = false;   // stop game loop actions until player resumes
-      updatePauseMenu();     // update pause overlay UI in case it's shown
+      gameStarted = false;
     } else {
-      // next round
+      // Next round
       roundNumber++;
       resetRound(true);
     }
   }, 1500);
 }
+
 
   // -------------------- Draw Functions --------------------
   function drawRing(){
