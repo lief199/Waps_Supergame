@@ -62,7 +62,7 @@
   rematchBtn.addEventListener('click', () => {
   rematchScreen.style.display = 'none';
 
-  // If the match already ended, save the result before restarting
+  // If the match already ended, save the result before restarting d
   if (p1Wins >= Math.ceil(maxRounds / 2) || p2Wins >= Math.ceil(maxRounds / 2)) {
     const winner = (p1Wins > p2Wins) ? player1Name : player2Name;
     saveMatchResult(winner);
