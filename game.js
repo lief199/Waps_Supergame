@@ -62,6 +62,11 @@
   rematchBtn.addEventListener('click', () => {
   rematchScreen.style.display = 'none';
 
+  // If the match already ended, save the result before restarting
+  if (p1Wins >= Math.ceil(maxRounds / 2) || p2Wins >= Math.ceil(maxRounds / 2)) {
+    const winner = (p1Wins > p2Wins) ? player1Name : player2Name;
+    saveMatchResult(winner);
+  }
   if (p1Wins >= 2 || p2Wins >= 2) {
     resetGame(true);  // start fresh match
   } else {
@@ -126,8 +131,8 @@
 
   // -------------------- Attacks --------------------
   const ATTACKS = {
-    leftJab:{ damage:2093, range:45, width:15, height:10, windup:150, active:120, recover:180, knockback:3.5, stamCost:6 },
-    rightJab:{ damage:24732, range:45, width:15 , height:10, windup:150, active:120, recover:180, knockback:3, stamCost:7 }
+    leftJab:{ damage:12, range:45, width:15, height:10, windup:150, active:120, recover:180, knockback:3.5, stamCost:6 },
+    rightJab:{ damage:14, range:45, width:15 , height:10, windup:150, active:120, recover:180, knockback:3, stamCost:7 }
   };
   const COVER = { reduce:0.4, stamPerHit:12, stamPerTick:8/60, pushback:8 };
   const STAM = { max:100, regen:12/60, cooldown:700 };
