@@ -374,48 +374,7 @@
   }
 }
 
-function getLeaderboard() {
-  return new Promise((resolve, reject) => {
-    const callbackName = "jsonpCallback_" + Date.now();
-
-    window[callbackName] = function (data) {
-      delete window[callbackName];
-      document.body.removeChild(script);
-
-      if (!Array.isArray(data)) {
-        console.error("Unexpected leaderboard format:", data);
-        reject("Invalid data");
-        return;
-      }
-
-      // ✅ Existing logic resolves the data
-      resolve(data);
-
-      // ✅ Update the HTML leaderboard (the <ul> inside your div)
-      const leaderboardList = document.getElementById("leaderboardList");
-      if (leaderboardList) {
-        leaderboardList.innerHTML = '';
-        data.forEach(entry => {
-          const li = document.createElement("li");
-          li.textContent = `${entry.name}: ${entry.wins}`;
-          leaderboardList.appendChild(li);
-        });
-      }
-    };
-
-    // JSONP request
-    const script = document.createElement("script");
-    script.src = `${SCRIPT_URL}?callback=${callbackName}`;
-    script.onerror = function () {
-      delete window[callbackName];
-      document.body.removeChild(script);
-      reject("Network error loading leaderboard");
-    };
-    document.body.appendChild(script);
-  });
-}
-
-
+function getLeaderboard() { return new Promise((resolve, reject) => { const callbackName = "jsonpCallback_" + Date.now(); window[callbackName] = function (data) { delete window[callbackName]; document.body.removeChild(script); if (!Array.isArray(data)) { console.error("Unexpected leaderboard format:", data); reject("Invalid data"); return; }
 
       // Clear leaderboard
       rematchLeaderboardEl.innerHTML = "";
