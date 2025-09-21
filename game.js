@@ -296,29 +296,62 @@
   }
 
   function drawPlayer(p){
-    let img=p.covering?p.sprites.shield:p.attacking==='leftJab'?p.sprites.left:p.attacking==='rightJab'?p.sprites.right:p.sprites.idle;
-    if(img && img.complete && img.naturalWidth>0){
-      ctx.save(); ctx.globalAlpha=0.95;
-      let frame=0; const frameCount=4; const frameHeight=img.height/frameCount;
-      if(p.attacking){
-        const def=ATTACKS[p.attacking]; const total=def.windup+def.active+def.recover;
-        frame=Math.floor((p.attackTimer/total)*frameCount); if(frame>=frameCount) frame=frameCount-1;
-      } else if(p.covering){
-        const progress=Math.min(1,(p.coverTimer||0)/200); frame=Math.floor(progress*(frameCount-1)); if(frame>=frameCount) frame=frameCount-1;
-      } else frame=Math.floor(Date.now()/200)%frameCount;
+  // choose sprite
+  let img = p.covering ? p.sprites.shield :
+            p.attacking === 'leftJab' ? p.sprites.left :
+            p.attacking === 'rightJab' ? p.sprites.right :
+            p.sprites.idle;
 
-      if(p.dir===1){ ctx.translate(p.x+p.w,p.y); ctx.scale(-1,1); } 
-      else ctx.translate(p.x,p.y);
+  // ensure image is loaded
+  if(img){
+    if(!img.complete) img.onload = ()=>{}; // force load
+    const frameCount = 4;
+    const frameHeight = img.height / (frameCount || 1); // avoid division by 0
+    let frame = 0;
 
-      ctx.drawImage(img,0,frame*frameHeight,img.width,frameHeight,0,0,p.w,p.h);
-      ctx.restore();
-    } else { ctx.fillStyle="#fff"; ctx.fillRect(p.x,p.y,p.w,p.h); }
+    if(p.attacking){
+      const def = ATTACKS[p.attacking];
+      const total = def.windup + def.active + def.recover;
+      frame = Math.floor((p.attackTimer / total) * frameCount);
+      if(frame >= frameCount) frame = frameCount - 1;
+    } else if(p.covering){
+      const progress = Math.min(1, (p.coverTimer || 0) / 200);
+      frame = Math.floor(progress * (frameCount - 1));
+    } else {
+      frame = Math.floor(Date.now() / 200) % frameCount;
+    }
 
-    if(showHitboxes){
-      const hurt=makeHurtbox(p); ctx.strokeStyle="lime"; ctx.strokeRect(hurt.x,hurt.y,hurt.w,hurt.h);
-      if(p.attacking){ const hb=makeHitbox(p,p.attacking); ctx.strokeStyle="red"; ctx.strokeRect(hb.x,hb.y,hb.w,hb.h); }
+    ctx.save();
+    ctx.globalAlpha = 0.95;
+
+    // draw according to direction
+    if(p.dir === 1){
+      ctx.translate(p.x + p.w, p.y);
+      ctx.scale(-1, 1);
+    } else {
+      ctx.translate(p.x, p.y);
+    }
+
+    ctx.drawImage(img, 0, frame * frameHeight, img.width, frameHeight, 0, 0, p.w, p.h);
+    ctx.restore();
+  } else {
+    // fallback rectangle if image not ready
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(p.x, p.y, p.w, p.h);
+  }
+
+  // draw hitboxes if enabled
+  if(showHitboxes){
+    const hurt = makeHurtbox(p);
+    ctx.strokeStyle = "lime";
+    ctx.strokeRect(hurt.x, hurt.y, hurt.w, hurt.h);
+    if(p.attacking){
+      const hb = makeHitbox(p, p.attacking);
+      if(hb){ ctx.strokeStyle = "red"; ctx.strokeRect(hb.x, hb.y, hb.w, hb.h); }
     }
   }
+}
+
 
   function updateUI(){ 
     ui.p1hp.style.width=`${P1.hp}%`; 
