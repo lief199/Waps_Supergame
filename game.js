@@ -373,32 +373,53 @@
     console.error('Failed to save match:', err);
   }
 }
+function getLeaderboard() {
+  return new Promise((resolve, reject) => {
+    const callbackName = "jsonpCallback_" + Date.now();
 
-function getLeaderboard() { return new Promise((resolve, reject) => { const callbackName = "jsonpCallback_" + Date.now(); window[callbackName] = function (data) { delete window[callbackName]; document.body.removeChild(script); if (!Array.isArray(data)) { console.error("Unexpected leaderboard format:", data); reject("Invalid data"); return; }
+    window[callbackName] = function (data) {
+      delete window[callbackName];
+      document.body.removeChild(script);
 
-      // Clear leaderboard
+      if (!Array.isArray(data)) {
+        console.error("Unexpected leaderboard format:", data);
+        reject("Invalid data");
+        return;
+      }
+
+      // --------- Update rematch leaderboard ---------
       rematchLeaderboardEl.innerHTML = "";
-
       data.forEach(entry => {
         const div = document.createElement("div");
         div.textContent = `${entry.name}: ${entry.wins}`;
         rematchLeaderboardEl.appendChild(div);
       });
 
+      // --------- Update main HTML leaderboard ---------
+      const leaderboardList = document.getElementById("leaderboardList");
+      if (leaderboardList) {
+        leaderboardList.innerHTML = "";
+        data.forEach(entry => {
+          const li = document.createElement("li");
+          li.textContent = `${entry.name}: ${entry.wins}`;
+          leaderboardList.appendChild(li);
+        });
+      }
+
       resolve(data);
     };
 
     const script = document.createElement("script");
     script.src = `${SCRIPT_URL}?callback=${callbackName}`;
-    script.onerror = () => {
-      delete window[callbackName];
-      document.body.removeChild(script);
-      reject("JSONP request failed");
-    };
-
+    script.onerror = () => reject("Failed to load leaderboard");
     document.body.appendChild(script);
   });
 }
+
+// --------- Auto-run on page load ---------
+window.addEventListener("load", () => {
+  getLeaderboard().catch(err => console.error("Leaderboard error:", err));
+});
 
 
 
