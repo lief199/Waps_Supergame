@@ -364,8 +364,34 @@
   // -------------------- Leaderboard API --------------------
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7zkKnhE5dRqEYgfZl3tgJ6a60F9DQOiSQ9L_m4rFStQm_A4cTanCiWWOeuYynG-tBGQ/exec";
 
-  async function getLeaderboard() { /* ... your original leaderboard code ... */ }
-  async function saveMatchResult(winnerName) { /* ... your original save result code ... */ }
+  async function saveMatchResult(winnerName) {
+  try {
+    const response = await fetch(SCRIPT_URL + '?winner=' + encodeURIComponent(winnerName));
+    const result = await response.json();
+    console.log('Match saved:', result);
+  } catch (err) {
+    console.error('Failed to save match:', err);
+  }
+}
+
+async function getLeaderboard() {
+  try {
+    const response = await fetch(SCRIPT_URL + '?action=getLeaderboard');
+    const data = await response.json();
+
+    if (!data || !Array.isArray(data.scores)) return;
+
+    rematchLeaderboardEl.innerHTML = '';
+    data.scores.forEach(entry => {
+      const div = document.createElement('div');
+      div.textContent = `${entry.name}: ${entry.score}`;
+      rematchLeaderboardEl.appendChild(div);
+    });
+  } catch (err) {
+    console.error('Failed to load leaderboard:', err);
+  }
+}
+
 
   // -------------------- Main Loop --------------------
   let last=0;
