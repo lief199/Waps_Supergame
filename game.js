@@ -361,7 +361,6 @@ async function getLeaderboard() {
     console.error("Leaderboard fetch error:", e);
   }
 }
-
 async function saveMatchResult(winnerName) {
   try {
     // defensive: ensure SCRIPT_URL is defined
@@ -370,32 +369,30 @@ async function saveMatchResult(winnerName) {
       return;
     }
 
-    const payload = { winner: winnerName };
+    // build URL with ?winner=<name>
+    const url = SCRIPT_URL + "?winner=" + encodeURIComponent(winnerName);
 
-    const res = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+    const res = await fetch(url, { method: "GET" });
 
     if (!res.ok) {
-      const txt = await res.text().catch(() => '');
-      console.warn('Save result HTTP error', res.status, txt);
+      const txt = await res.text().catch(() => "");
+      console.warn("Save result HTTP error", res.status, txt);
       return;
     }
 
     // If your Apps Script returns JSON status, we log it
     let json;
     try { json = await res.json(); } catch (e) { json = null; }
-    console.log('Saved match result:', json || 'OK');
+    console.log("Saved match result:", json || "OK");
 
     // small delay then refresh leaderboard, helps ensure sheet update visible
     setTimeout(getLeaderboard, 400);
 
   } catch (err) {
-    console.error('Save match error:', err);
+    console.error("Save match error:", err);
   }
 }
+
 
 
   // -------------------- Main Loop --------------------
