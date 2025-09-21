@@ -25,7 +25,7 @@
   let player2Name = 'P2';
   let gameStarted = false;
   let paused = true;
-  let lastWinnerName = ''; // <--- store last winner for rematch API
+  let lastWinnerName = ''; // store last winner for rematch API
 
   // -------------------- Center Screens --------------------
   function centerScreen(screen) {
@@ -36,7 +36,7 @@
   }
   function showStartScreen() { centerScreen(startScreen); }
   function showRematchScreen(winner) {
-    lastWinnerName = winner; // store winner
+    lastWinnerName = winner;
     rematchMessage.textContent = winner + " Wins!";
     centerScreen(rematchScreen);
     paused = true;
@@ -63,14 +63,12 @@
   // -------------------- Rematch Button --------------------
   rematchBtn.addEventListener('click', () => {
     rematchScreen.style.display = 'none';
-
-    // Save last match result again if needed
     if(lastWinnerName) saveMatchResult(lastWinnerName);
 
     if (p1Wins >= 2 || p2Wins >= 2) {
-      resetGame(true);  // start fresh match
+      resetGame(true);  
     } else {
-      resetRound(true); // continue to next round
+      resetRound(true); 
     }
 
     gameStarted = true; 
@@ -262,18 +260,15 @@
   }
 
   function endRound(winnerName) {
-    // KO display
     countdown = "K.O!";
     countdownActive = true;
     roundActive = false;
 
     setTimeout(() => {
       countdownActive = false;
-
       const winsNeeded = Math.ceil(maxRounds / 2);
 
       if (p1Wins >= winsNeeded || p2Wins >= winsNeeded) {
-        // Match over
         saveMatchResult(winnerName);
         getLeaderboard();
         showRematchScreen(winnerName);
@@ -287,15 +282,57 @@
   }
 
   // -------------------- Draw / UI Functions --------------------
-  function drawRing(){ /* ... unchanged ... */ }
-  function drawPlayer(p){ /* ... unchanged ... */ }
-  function updateUI(){ ui.p1hp.style.width=`${P1.hp}%`; ui.p1st.style.width=`${P1.stam}%`; ui.p2hp.style.width=`${P2.hp}%`; ui.p2st.style.width=`${P2.stam}%`; ui.timer.textContent = roundTime; }
+  function drawRing(){
+    ctx.fillStyle="#3b4a5a"; ctx.fillRect(0,WORLD.floorY,WORLD.w,WORLD.h-WORLD.floorY);
+    ctx.fillStyle="#2f6fab"; ctx.fillRect(40,WORLD.floorY-20,WORLD.w-80,20);
+    ctx.strokeStyle="#d9d9d9"; ctx.lineWidth=4;
+    for(let i=0;i<3;i++){
+      let y=WORLD.floorY-40-i*20;
+      ctx.beginPath(); ctx.moveTo(40,y); ctx.lineTo(WORLD.w-40,y); ctx.stroke();
+    }
+    ctx.fillStyle="#bfbfbf";
+    ctx.fillRect(30,WORLD.floorY-160,20,160);
+    ctx.fillRect(WORLD.w-50,WORLD.floorY-160,20,160);
+  }
+
+  function drawPlayer(p){
+    let img=p.covering?p.sprites.shield:p.attacking==='leftJab'?p.sprites.left:p.attacking==='rightJab'?p.sprites.right:p.sprites.idle;
+    if(img && img.complete && img.naturalWidth>0){
+      ctx.save(); ctx.globalAlpha=0.95;
+      let frame=0; const frameCount=4; const frameHeight=img.height/frameCount;
+      if(p.attacking){
+        const def=ATTACKS[p.attacking]; const total=def.windup+def.active+def.recover;
+        frame=Math.floor((p.attackTimer/total)*frameCount); if(frame>=frameCount) frame=frameCount-1;
+      } else if(p.covering){
+        const progress=Math.min(1,(p.coverTimer||0)/200); frame=Math.floor(progress*(frameCount-1)); if(frame>=frameCount) frame=frameCount-1;
+      } else frame=Math.floor(Date.now()/200)%frameCount;
+
+      if(p.dir===1){ ctx.translate(p.x+p.w,p.y); ctx.scale(-1,1); } 
+      else ctx.translate(p.x,p.y);
+
+      ctx.drawImage(img,0,frame*frameHeight,img.width,frameHeight,0,0,p.w,p.h);
+      ctx.restore();
+    } else { ctx.fillStyle="#fff"; ctx.fillRect(p.x,p.y,p.w,p.h); }
+
+    if(showHitboxes){
+      const hurt=makeHurtbox(p); ctx.strokeStyle="lime"; ctx.strokeRect(hurt.x,hurt.y,hurt.w,hurt.h);
+      if(p.attacking){ const hb=makeHitbox(p,p.attacking); ctx.strokeStyle="red"; ctx.strokeRect(hb.x,hb.y,hb.w,hb.h); }
+    }
+  }
+
+  function updateUI(){ 
+    ui.p1hp.style.width=`${P1.hp}%`; 
+    ui.p1st.style.width=`${P1.stam}%`; 
+    ui.p2hp.style.width=`${P2.hp}%`; 
+    ui.p2st.style.width=`${P2.stam}%`; 
+    ui.timer.textContent = roundTime; 
+  }
 
   // -------------------- Leaderboard API --------------------
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7zkKnhE5dRqEYgfZl3tgJ6a60F9DQOiSQ9L_m4rFStQm_A4cTanCiWWOeuYynG-tBGQ/exec";
 
-  async function getLeaderboard() { /* ... unchanged ... */ }
-  async function saveMatchResult(winnerName) { /* ... unchanged ... */ }
+  async function getLeaderboard() { /* ... your original leaderboard code ... */ }
+  async function saveMatchResult(winnerName) { /* ... your original save result code ... */ }
 
   // -------------------- Main Loop --------------------
   let last=0;
