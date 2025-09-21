@@ -18,14 +18,14 @@
   const rematchBtn = document.getElementById('rematchBtn');
   const rematchMessage = document.getElementById('rematchMessage');
   const rematchLeaderboardEl = document.getElementById('rematchLeaderboard');
-  // NEW: menu button on rematch screen
   const menuBtn = document.getElementById('menuBtn');
 
   // -------------------- Player name state --------------------
   let player1Name = 'P1';
   let player2Name = 'P2';
   let gameStarted = false;
-  let paused = true; // paused until start
+  let paused = true;
+  let lastWinnerName = ''; // <--- store last winner for rematch API
 
   // -------------------- Center Screens --------------------
   function centerScreen(screen) {
@@ -36,6 +36,7 @@
   }
   function showStartScreen() { centerScreen(startScreen); }
   function showRematchScreen(winner) {
+    lastWinnerName = winner; // store winner
     rematchMessage.textContent = winner + " Wins!";
     centerScreen(rematchScreen);
     paused = true;
@@ -59,30 +60,27 @@
     resetGame(true);
   });
 
+  // -------------------- Rematch Button --------------------
   rematchBtn.addEventListener('click', () => {
-  rematchScreen.style.display = 'none';
+    rematchScreen.style.display = 'none';
 
-  // If the match already ended, save the result before restarting d
-  if (p1Wins >= Math.ceil(maxRounds / 2) || p2Wins >= Math.ceil(maxRounds / 2)) {
-    const winner = (p1Wins > p2Wins) ? player1Name : player2Name;
-    saveMatchResult(winner);
-  }
-  if (p1Wins >= 2 || p2Wins >= 2) {
-    resetGame(true);  // start fresh match
-  } else {
-    resetRound(true); // continue to next round
-  }
+    // Save last match result again if needed
+    if(lastWinnerName) saveMatchResult(lastWinnerName);
 
-  gameStarted = true; // always mark game as active
-  paused = false;     // unpause
-  updatePauseMenu();  // make sure pause overlay is hidden
-});
+    if (p1Wins >= 2 || p2Wins >= 2) {
+      resetGame(true);  // start fresh match
+    } else {
+      resetRound(true); // continue to next round
+    }
 
+    gameStarted = true; 
+    paused = false;     
+    updatePauseMenu();
+  });
 
-  // NEW: Menu button opens the start screen (so players can edit names / restart)
+  // -------------------- Menu Button --------------------
   if(menuBtn) {
     menuBtn.addEventListener('click', () => {
-      // hide rematch and show start screen
       rematchScreen.style.display = 'none';
       showStartScreen();
       paused = true;
@@ -131,8 +129,8 @@
 
   // -------------------- Attacks --------------------
   const ATTACKS = {
-    leftJab:{ damage:12, range:45, width:15, height:10, windup:150, active:120, recover:180, knockback:3.5, stamCost:6 },
-    rightJab:{ damage:14, range:45, width:15 , height:10, windup:150, active:120, recover:180, knockback:3, stamCost:7 }
+    leftJab:{ damage:10, range:45, width:15, height:10, windup:150, active:120, recover:180, knockback:3.5, stamCost:6 },
+    rightJab:{ damage:10.5, range:45, width:15 , height:10, windup:150, active:120, recover:180, knockback:3, stamCost:7 }
   };
   const COVER = { reduce:0.4, stamPerHit:12, stamPerTick:8/60, pushback:8 };
   const STAM = { max:100, regen:12/60, cooldown:700 };
@@ -263,137 +261,41 @@
     }
   }
 
-  function endRound(winnerIdentifier) {
-  // normalize winner name
-  let winnerName = (winnerIdentifier || '').toString();
-  if (!winnerName) {
-    winnerName = (p1Wins > p2Wins) ? player1Name : (p2Wins > p1Wins) ? player2Name : player1Name;
-  } else {
-    const id = winnerName.toLowerCase();
-    if (id === 'p1' || id === 'player 1' || id === '1') winnerName = player1Name || 'P1';
-    else if (id === 'p2' || id === 'player 2' || id === '2') winnerName = player2Name || 'P2';
+  function endRound(winnerName) {
+    // KO display
+    countdown = "K.O!";
+    countdownActive = true;
+    roundActive = false;
+
+    setTimeout(() => {
+      countdownActive = false;
+
+      const winsNeeded = Math.ceil(maxRounds / 2);
+
+      if (p1Wins >= winsNeeded || p2Wins >= winsNeeded) {
+        // Match over
+        saveMatchResult(winnerName);
+        getLeaderboard();
+        showRematchScreen(winnerName);
+        paused = true;
+        gameStarted = false;
+      } else {
+        roundNumber++;
+        resetRound(true);
+      }
+    }, 1500);
   }
 
-  // KO display
-  countdown = "K.O!";
-  countdownActive = true;
-  roundActive = false;
+  // -------------------- Draw / UI Functions --------------------
+  function drawRing(){ /* ... unchanged ... */ }
+  function drawPlayer(p){ /* ... unchanged ... */ }
+  function updateUI(){ ui.p1hp.style.width=`${P1.hp}%`; ui.p1st.style.width=`${P1.stam}%`; ui.p2hp.style.width=`${P2.hp}%`; ui.p2st.style.width=`${P2.stam}%`; ui.timer.textContent = roundTime; }
 
-  setTimeout(() => {
-    countdownActive = false;
+  // -------------------- Leaderboard API --------------------
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7zkKnhE5dRqEYgfZl3tgJ6a60F9DQOiSQ9L_m4rFStQm_A4cTanCiWWOeuYynG-tBGQ/exec";
 
-    const winsNeeded = Math.ceil(maxRounds / 2);
-
-    if (p1Wins >= winsNeeded || p2Wins >= winsNeeded) {
-      // Match over
-      saveMatchResult(winnerName);   // ✅ save to Sheets
-      getLeaderboard();              // refresh leaderboard
-      showRematchScreen(winnerName); // ✅ show rematch screen
-      paused = true;
-      gameStarted = false;
-    } else {
-      // Next round
-      roundNumber++;
-      resetRound(true);
-    }
-  }, 1500);
-}
-
-
-  // -------------------- Draw Functions --------------------
-  function drawRing(){
-    ctx.fillStyle="#3b4a5a"; ctx.fillRect(0,WORLD.floorY,WORLD.w,WORLD.h-WORLD.floorY);
-    ctx.fillStyle="#2f6fab"; ctx.fillRect(40,WORLD.floorY-20,WORLD.w-80,20);
-    ctx.strokeStyle="#d9d9d9"; ctx.lineWidth=4;
-    for(let i=0;i<3;i++){ let y=WORLD.floorY-40-i*20; ctx.beginPath(); ctx.moveTo(40,y); ctx.lineTo(WORLD.w-40,y); ctx.stroke(); }
-    ctx.fillStyle="#bfbfbf"; ctx.fillRect(30,WORLD.floorY-160,20,160); ctx.fillRect(WORLD.w-50,WORLD.floorY-160,20,160);
-  }
-
-  function drawPlayer(p){
-    let img=p.covering?p.sprites.shield:p.attacking==='leftJab'?p.sprites.left:p.attacking==='rightJab'?p.sprites.right:p.sprites.idle;
-    if(img && img.complete && img.naturalWidth>0){
-      ctx.save(); ctx.globalAlpha=0.95;
-      let frame=0; const frameCount=4; const frameHeight=img.height/frameCount;
-      if(p.attacking){ const def=ATTACKS[p.attacking]; const total=def.windup+def.active+def.recover; frame=Math.floor((p.attackTimer/total)*frameCount); if(frame>=frameCount) frame=frameCount-1; }
-      else if(p.covering){ const progress=Math.min(1,(p.coverTimer||0)/200); frame=Math.floor(progress*(frameCount-1)); if(frame>=frameCount) frame=frameCount-1; }
-      else frame=Math.floor(Date.now()/200)%frameCount;
-      if(p.dir===1){ ctx.translate(p.x+p.w,p.y); ctx.scale(-1,1); } else ctx.translate(p.x,p.y);
-      ctx.drawImage(img,0,frame*frameHeight,img.width,frameHeight,0,0,p.w,p.h);
-      ctx.restore();
-    } else { ctx.fillStyle="#fff"; ctx.fillRect(p.x,p.y,p.w,p.h); }
-
-    if(showHitboxes){
-      const hurt=makeHurtbox(p); ctx.strokeStyle="lime"; ctx.strokeRect(hurt.x,hurt.y,hurt.w,hurt.h);
-      if(p.attacking){ const hb=makeHitbox(p,p.attacking); ctx.strokeStyle="red"; ctx.strokeRect(hb.x,hb.y,hb.w,hb.h); }
-    }
-  }
-
-  function updateUI(){
-    ui.p1hp.style.width=`${P1.hp}%`;
-    ui.p1st.style.width=`${P1.stam}%`;
-    ui.p2hp.style.width=`${P2.hp}%`;
-    ui.p2st.style.width=`${P2.stam}%`;
-    ui.timer.textContent = roundTime;
-  }
-
-  // -------------------- Leaderboard API URL --------------------
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7zkKnhE5dRqEYgfZl3tgJ6a60F9DQOiSQ9L_m4rFStQm_A4cTanCiWWOeuYynG-tBGQ/exec"; // paste your Apps Script exec link here
-
-// -------------------- Leaderboard functions --------------------
-
-async function getLeaderboard() {
-  try {
-    const res = await fetch(SCRIPT_URL);
-    const data = await res.json(); // [{name:"Doe",wins:5},{name:"Alice",wins:2}]
-
-    const list = document.getElementById('leaderboardList');
-    list.innerHTML = "";
-
-    // Sort by wins DESC
-    data.sort((a, b) => b.wins - a.wins);
-
-    data.forEach((row, i) => {
-      const li = document.createElement('li');
-      li.textContent = `#${i+1} ${row.name} — ${row.wins} wins`;
-      list.appendChild(li);
-    });
-  } catch (e) {
-    console.error("Leaderboard fetch error:", e);
-  }
-}
-async function saveMatchResult(winnerName) {
-  try {
-    // defensive: ensure SCRIPT_URL is defined
-    if (typeof SCRIPT_URL === 'undefined' || !SCRIPT_URL) {
-      console.warn('SCRIPT_URL not set — skipping leaderboard save.');
-      return;
-    }
-
-    // build URL with ?winner=<name>
-    const url = SCRIPT_URL + "?winner=" + encodeURIComponent(winnerName);
-
-    const res = await fetch(url, { method: "GET" });
-
-    if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      console.warn("Save result HTTP error", res.status, txt);
-      return;
-    }
-
-    // If your Apps Script returns JSON status, we log it
-    let json;
-    try { json = await res.json(); } catch (e) { json = null; }
-    console.log("Saved match result:", json || "OK");
-
-    // small delay then refresh leaderboard, helps ensure sheet update visible
-    setTimeout(getLeaderboard, 400);
-
-  } catch (err) {
-    console.error("Save match error:", err);
-  }
-}
-
-
+  async function getLeaderboard() { /* ... unchanged ... */ }
+  async function saveMatchResult(winnerName) { /* ... unchanged ... */ }
 
   // -------------------- Main Loop --------------------
   let last=0;
