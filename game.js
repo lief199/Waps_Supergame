@@ -376,12 +376,17 @@
 
 async function getLeaderboard() {
   try {
-    const response = await fetch(SCRIPT_URL); // remove ?action=getLeaderboard
+    const response = await fetch(SCRIPT_URL); // App Script returns array directly
     const data = await response.json();
 
-    if (!data || !Array.isArray(data)) return;
+    // Defensive check: must be an array
+    if (!Array.isArray(data)) {
+      console.error("Unexpected leaderboard format:", data);
+      return;
+    }
 
     rematchLeaderboardEl.innerHTML = '';
+
     data.forEach(entry => {
       const div = document.createElement('div');
       div.textContent = `${entry.name}: ${entry.wins}`;
@@ -392,6 +397,7 @@ async function getLeaderboard() {
     console.error('Failed to load leaderboard:', err);
   }
 }
+
 
 
 
