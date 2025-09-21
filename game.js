@@ -442,17 +442,16 @@ function getLeaderboard() {
     requestAnimationFrame(loop);
   }
 
-  // -------------------- Init --------------------
+    // -------------------- Init --------------------
   showStartScreen();
   const p1LabelInit = document.getElementById('p1NameLabel');
   const p2LabelInit = document.getElementById('p2NameLabel');
-  if(p1LabelInit) p1LabelInit.textContent = `${player1Name} (Sky Blue)`;
-  if(p2LabelInit) p2LabelInit.textContent = `${player2Name} (Orange)`;
+  if (p1LabelInit) p1LabelInit.textContent = `${player1Name} (Sky Blue)`;
+  if (p2LabelInit) p2LabelInit.textContent = `${player2Name} (Orange)`;
 
   resetGame(false);
   requestAnimationFrame(loop);
-  window.addEventListener("DOMContentLoaded", () => {
-  getLeaderboard();
-});
 
+  // ✅ Call leaderboard immediately (not inside DOMContentLoaded)
+  getLeaderboard();
 })();
