@@ -376,22 +376,23 @@
 
 async function getLeaderboard() {
   try {
-    const response = await fetch(SCRIPT_URL + '?action=getLeaderboard');
+    const response = await fetch(SCRIPT_URL); // remove ?action=getLeaderboard
     const data = await response.json();
 
     if (!data || !Array.isArray(data)) return;
 
-rematchLeaderboardEl.innerHTML = '';
-data.forEach(entry => {
-  const div = document.createElement('div');
-  div.textContent = `${entry.name}: ${entry.wins}`;
-  rematchLeaderboardEl.appendChild(div);
-});
+    rematchLeaderboardEl.innerHTML = '';
+    data.forEach(entry => {
+      const div = document.createElement('div');
+      div.textContent = `${entry.name}: ${entry.wins}`;
+      rematchLeaderboardEl.appendChild(div);
+    });
 
   } catch (err) {
     console.error('Failed to load leaderboard:', err);
   }
 }
+
 
 
   // -------------------- Main Loop --------------------
