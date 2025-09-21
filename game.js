@@ -379,14 +379,15 @@ async function getLeaderboard() {
     const response = await fetch(SCRIPT_URL + '?action=getLeaderboard');
     const data = await response.json();
 
-    if (!data || !Array.isArray(data.scores)) return;
+    if (!data || !Array.isArray(data)) return;
 
-    rematchLeaderboardEl.innerHTML = '';
-    data.scores.forEach(entry => {
-      const div = document.createElement('div');
-      div.textContent = `${entry.name}: ${entry.score}`;
-      rematchLeaderboardEl.appendChild(div);
-    });
+rematchLeaderboardEl.innerHTML = '';
+data.forEach(entry => {
+  const div = document.createElement('div');
+  div.textContent = `${entry.name}: ${entry.wins}`;
+  rematchLeaderboardEl.appendChild(div);
+});
+
   } catch (err) {
     console.error('Failed to load leaderboard:', err);
   }
