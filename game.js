@@ -374,30 +374,43 @@
   }
 }
 
-async function getLeaderboard() {
-  try {
-    const response = await fetch(SCRIPT_URL); // App Script returns array directly
-    const data = await response.json();
+function getLeaderboard() {
+  return new Promise((resolve, reject) => {
+    const callbackName = "jsonpCallback_" + Date.now();
 
-    // Defensive check: must be an array
-    if (!Array.isArray(data)) {
-      console.error("Unexpected leaderboard format:", data);
-      return;
-    }
+    window[callbackName] = function (data) {
+      delete window[callbackName];
+      document.body.removeChild(script);
 
-    rematchLeaderboardEl.innerHTML = '';
+      if (!Array.isArray(data)) {
+        console.error("Unexpected leaderboard format:", data);
+        reject("Invalid data");
+        return;
+      }
 
-    data.forEach(entry => {
-      const div = document.createElement('div');
-      div.textContent = `${entry.name}: ${entry.wins}`;
-      rematchLeaderboardEl.appendChild(div);
-    });
+      // Clear leaderboard
+      rematchLeaderboardEl.innerHTML = "";
 
-  } catch (err) {
-    console.error('Failed to load leaderboard:', err);
-  }
+      data.forEach(entry => {
+        const div = document.createElement("div");
+        div.textContent = `${entry.name}: ${entry.wins}`;
+        rematchLeaderboardEl.appendChild(div);
+      });
+
+      resolve(data);
+    };
+
+    const script = document.createElement("script");
+    script.src = `${SCRIPT_URL}?callback=${callbackName}`;
+    script.onerror = () => {
+      delete window[callbackName];
+      document.body.removeChild(script);
+      reject("JSONP request failed");
+    };
+
+    document.body.appendChild(script);
+  });
 }
-
 
 
 
@@ -437,6 +450,9 @@ async function getLeaderboard() {
   if(p2LabelInit) p2LabelInit.textContent = `${player2Name} (Orange)`;
 
   resetGame(false);
-  getLeaderboard();
   requestAnimationFrame(loop);
+  window.addEventListener("DOMContentLoaded", () => {
+  getLeaderboard();
+});
+
 })();
