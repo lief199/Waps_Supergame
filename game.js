@@ -388,39 +388,33 @@ function getLeaderboard() {
         return;
       }
 
-      // --------- Update rematch leaderboard ---------
-      rematchLeaderboardEl.innerHTML = "";
-      data.forEach(entry => {
-        const div = document.createElement("div");
-        div.textContent = `${entry.name}: ${entry.wins}`;
-        rematchLeaderboardEl.appendChild(div);
-      });
+      // ✅ Existing logic resolves the data
+      resolve(data);
 
-      // --------- Update main HTML leaderboard ---------
+      // ✅ Update the HTML leaderboard (the <ul> inside your div)
       const leaderboardList = document.getElementById("leaderboardList");
       if (leaderboardList) {
-        leaderboardList.innerHTML = "";
+        leaderboardList.innerHTML = '';
         data.forEach(entry => {
           const li = document.createElement("li");
           li.textContent = `${entry.name}: ${entry.wins}`;
           leaderboardList.appendChild(li);
         });
       }
-
-      resolve(data);
     };
 
+    // JSONP request
     const script = document.createElement("script");
     script.src = `${SCRIPT_URL}?callback=${callbackName}`;
-    script.onerror = () => reject("Failed to load leaderboard");
+    script.onerror = function () {
+      delete window[callbackName];
+      document.body.removeChild(script);
+      reject("Network error loading leaderboard");
+    };
     document.body.appendChild(script);
   });
 }
 
-// --------- Auto-run on page load ---------
-window.addEventListener("load", () => {
-  getLeaderboard().catch(err => console.error("Leaderboard error:", err));
-});
 
 
       // Clear leaderboard
