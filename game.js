@@ -337,7 +337,7 @@
   }
 
   // -------------------- Leaderboard API URL --------------------
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwsK5WlyioRWhEGVuZON6oFZ5c2SbSj3SoCvgw6yuLVPNWDIKfssg5h4JUsxnI80K1V0A/exec"; // paste your Apps Script exec link here
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxU9Ov-3Y7Wt1MI4EhbxVaBkdXhBJpupa9o6I8tlPxC5PznUQkzRwjcbTqTNnd18EAr1g/exec"; // paste your Apps Script exec link here
 
 // -------------------- Leaderboard functions --------------------
 
